@@ -29,7 +29,7 @@ class Connection(_http.JSONConnection):
     :param client: The client that owns the current connection.
     """
 
-    API_BASE_URL = "https://www.googleapis.com"
+    API_BASE_URL = "https://www-googleapis-staging.sandbox.google.com"
     """The base of the API call URL."""
 
     API_VERSION = "v2"
