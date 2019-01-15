@@ -368,6 +368,17 @@ class TestBigQuery(unittest.TestCase):
         self.assertEqual(table.dataset_id, dataset_id)
         self.assertEqual(table.project, public)
 
+    def test_get_model(self):
+        model_ref = DatasetReference("shollyman-demo-test","bqml_demo").model("ga_sessions_logistic")
+        table = Config.CLIENT.get_model(model_ref)
+
+    def test_list_models(self):
+        dataset_id = DatasetReference("shollyman-demo-test", "bqml_demo")
+        iterator = Config.CLIENT.list_models(dataset_id)
+        all_models = list(iterator)
+        self.assertIsNone(iterator.next_page_token)
+        self.assertIn("foo", all_models)
+
     def test_list_partitions(self):
         table_ref = DatasetReference(
             "bigquery-public-data", "ethereum_blockchain"

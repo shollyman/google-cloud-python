@@ -22,6 +22,7 @@ import copy
 import google.cloud._helpers
 from google.cloud.bigquery import _helpers
 from google.cloud.bigquery.table import TableReference
+from google.cloud.bigquery.model import ModelReference
 
 
 class AccessEntry(object):
@@ -190,6 +191,18 @@ class DatasetReference(object):
     def path(self):
         """str: URL path for the dataset based on project and dataset ID."""
         return "/projects/%s/datasets/%s" % (self.project, self.dataset_id)
+
+    def model(self, model_id):
+        """Constructs a ModelReference.
+
+        Args:
+            model_id (str): The ID of the model.
+
+        Returns:
+            google.cloud.bigquery.model.ModelReference:
+                A model reference for a model in this dataset.
+        """
+        return ModelReference(self, model_id)
 
     def table(self, table_id):
         """Constructs a TableReference.
