@@ -505,16 +505,16 @@ class Client(ClientWithProject):
 
         Use ``fields`` to specify which fields to update. At least one field
         must be provided. If a field is listed in ``fields`` and is ``None``
-        in ``table``, it will be deleted.
+        in ``model``, it will be deleted.
 
-        If ``table.etag`` is not ``None``, the update will only succeed if
-        the table on the server has the same ETag. Thus reading a table with
-        ``get_table``, changing its fields, and then passing it to
-        ``update_table`` will ensure that the changes will only be saved if
+        If ``model.etag`` is not ``None``, the update will only succeed if
+        the table on the server has the same ETag. Thus reading a model with
+        ``get_model``, changing its fields, and then passing it to
+        ``update_model`` will ensure that the changes will only be saved if
         no modifications to the table occurred since the read.
 
         Args:
-            table (google.cloud.bigquery.model.Model): The model to update.
+            model (google.cloud.bigquery.model.Model): The model to update.
             fields (Sequence[str]):
                 The fields of ``model`` to change, spelled as the Model
                 properties (e.g. "friendly_name").
@@ -722,6 +722,32 @@ class Client(ClientWithProject):
             params["deleteContents"] = "true"
 
         self._call_api(retry, method="DELETE", path=dataset.path, query_params=params)
+
+    def delete_model(self, model, retry=DEFAULT_RETRY):
+        """Delete a model
+
+        See
+        https://cloud.google.com/bigquery/docs/reference/rest/v2/models/delete
+
+        Args:
+            model (Union[ \
+                :class:`~google.cloud.bigquery.model.Model`, \
+                :class:`~google.cloud.bigquery.model.ModelReference`, \
+                str, \
+            ]):
+                A reference to the model to delete. If a string is passed in,
+                this method attempts to create a model reference from a
+                string using
+                :func:`google.cloud.bigquery.table.TableReference.from_string`.
+            retry (:class:`google.api_core.retry.Retry`):
+                (Optional) How to retry the RPC.
+        """
+        if isinstance(model, str):
+            model = ModelReference.from_string(model, default_project=self.project)
+
+        if not isinstance(model, (Model, ModelReference)):
+            raise TypeError("model must be a Model or a ModelReference")
+        self._call_api(retry, method="DELETE", path=model.path)
 
     def delete_table(self, table, retry=DEFAULT_RETRY):
         """Delete a table

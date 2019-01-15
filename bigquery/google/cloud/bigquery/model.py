@@ -228,6 +228,8 @@ class Model(object):
             A pointer to a model
     """
 
+    _PROPERTY_TO_API_FIELD = {}
+
     def __init__(self, model_ref, schema=None):
         self._properties = {"modelReference": model_ref.to_api_repr()}
         # Let the @property do validation.

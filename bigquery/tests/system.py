@@ -370,14 +370,28 @@ class TestBigQuery(unittest.TestCase):
 
     def test_get_model(self):
         model_ref = DatasetReference("shollyman-demo-test","bqml_demo").model("ga_sessions_logistic")
-        table = Config.CLIENT.get_model(model_ref)
+        model = Config.CLIENT.get_model(model_ref)
+
+    def test_update_model(self):
+        model_ref = DatasetReference("shollyman-demo-test","bqml_demo").model("ga_sessions_logistic")
+        model = Config.CLIENT.get_model(model_ref)
+        model.description = "testing"
+        updated = Config.CLIENT.update_model(model, ["description",])
+        self.assertEqual(updated.description, "testing")
+
+    def test_delete_model(self):
+        # run a CREATE MODEL query
+        # then...
+        Config.CLIENT.delete_model(model)
 
     def test_list_models(self):
-        dataset_id = DatasetReference("shollyman-demo-test", "bqml_demo")
-        iterator = Config.CLIENT.list_models(dataset_id)
+        dataset_id = _make_dataset_id("list_models")
+        dataset = self.temp_dataset(dataset_id)
+        iterator = Config.CLIENT.list_models(dataset)
         all_models = list(iterator)
         self.assertIsNone(iterator.next_page_token)
-        self.assertIn("foo", all_models)
+        self.assertIn("linear_reg", all_models)
+
 
     def test_list_partitions(self):
         table_ref = DatasetReference(
