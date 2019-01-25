@@ -214,6 +214,162 @@ class ModelReference(object):
         dataset_ref = DatasetReference(self._project, self._dataset_id)
         return "ModelReference({}, '{}')".format(repr(dataset_ref), self._model_id)
 
+class TrainingRun(object):
+    """TrainingRuns contains statistics for a single training run of a model.
+
+    See
+    https://cloud.google.com/bigquery/docs/reference/rest/v2/models
+    """
+
+    def __init__(self):
+        self._properties = {}
+
+    @classmethod
+    def from_api_repr(cls, resource):
+        """Factory:  construct a TrainingRun given its API representation.
+
+        Args:
+            resource (Dict[str, object])
+                TrainingRun representation returned from the API
+
+        Returns:
+            google.cloud.bigquery.model.TrainingRun:
+                TrainingRun parsed from ``resource``.
+        """
+        training_run = cls()
+        training_run._properties = resource
+        return training_run
+
+    def to_api_repr(self):
+        """Constructs the API resource of this TrainingRun
+
+        Returns:
+            Dict[str, object]: TrainingRun represented as an API resource.
+        """
+        return copy.deepcopy(self._properties)
+
+    @property
+    def training_options(self):
+        """google.cloud.bigquery.model.TrainingOptions: Training Options 
+        specified for the run.
+        """
+        prop = self._properties.get("trainingOptions")
+
+    @property
+    def started(self):
+        """Union[datetime.datetime, None]: Datetime at which the TrainingRun was started.
+        """
+        start_time = self._properties.get("startTime")
+        if start_time is not None:
+            return google.cloud._helpers._datetime_from_microseconds(
+                1000.0 * float(start_time)
+            )
+    
+    @property
+    def evaluation_metrics(self):
+        # TODO: 
+        #       EvaluationMetrics
+        #           RegressionMetrics
+        #           BinaryClassificationMetrics
+        #           AggregateClassificationMetrics
+        #           BinaryConfusionMetrics
+        #               ConfusionMatrix
+        #                   Row
+        #                   Entry
+        #           MultiClassClassificationMetrics
+        raise NotImplementedError
+
+
+class TrainingOptions(object):
+    """TrainingOptions represent options for a given training run.
+    
+    See
+    https://cloud.google.com/bigquery/docs/reference/rest/v2/models
+    """
+
+    @classmethod
+    def from_api_repr(cls, resource):
+        """Factory:  construct a TrainingOptions given its API representation.
+
+        Args:
+            resource (Dict[str, object])
+                TrainingOptions representation returned from the API.
+
+        Returns:
+            google.cloud.bigquery.model.TrainingOptions:
+                TrainingOptions parsed from ``resource``.
+        """
+        training_options = cls(TrainingOptions())
+        training_options._properties = resource
+
+        return training_run
+
+    def to_api_repr(self):
+        """Constructs the API resource of this TrainingOptions
+
+        Returns:
+            Dict[str, object]: TrainingOptions represented as an API resource.
+        """
+        return copy.deepcopy(self._properties)
+
+    @property
+    def max_iterations(self):
+        """Union[int,None]:  max number of iterations in training.
+        """
+        return self._properties.get("maxIterations")
+
+    @property
+    def loss_type(self):
+        """Union[str,None]:  type of loss function used during training run."
+        """
+        return self._properties.get("lossType")
+    
+    @property
+    def learn_rate(self):
+        """Union[double, None]: Learning rate in training.
+        """
+        return self._properties.get("learnRate")
+
+    @property
+    def l1_regularization(self):
+        """Union[double, None]: L1 regularization coefficient.
+        """
+        return self._properties.get("l1Regularization")
+
+    @property
+    def l2_regularization(self):
+        """Union[double, None]: L2 regularization coefficient.
+        """
+        return self._properties.get("l2Regularization")
+
+    @property
+    def min_relative_progress(self):
+        """Union[double, None]: When early stop is true, stops training
+        when accuracy improvement is less than min_relative_progress.
+        """
+        return self._properties.get("minRelativeProgress")
+
+    @property
+    def warm_start(self):
+        """Union[bool, None]: whether to train model from last checkpoint.
+        """
+        return self._properties.get("warmStart")
+
+    @property
+    def early_stop(self):
+        """Union[bool, None]: whether to stop early when loss doesn't improve
+        significantly/any more compared to min_relative_progress.
+        """
+        return self._properties.get("earlyStop")
+
+    @property
+    def input_label_columns(self): 
+        """List[str]: Name of input label columns in training data."""
+        cols = self._properties.get("inputLabelColumns")
+        if cols is None:
+            return []
+        return cols
+
 
 class Model(object):
     """Models represent a machine learning model created within BigQuery.
@@ -228,11 +384,12 @@ class Model(object):
             A pointer to a model
     """
 
-    _PROPERTY_TO_API_FIELD = {}
+    _PROPERTY_TO_API_FIELD = {
+        "friendly_name": "friendlyName",
+    }
 
     def __init__(self, model_ref, schema=None):
-        self._properties = {"modelReference": model_ref.to_api_repr()}
-        # Let the @property do validation.
+        self._properties = {"modelReference": model_ref.to_api_repr(), "labels": {}}
 
     @property
     def project(self):
@@ -280,6 +437,21 @@ class Model(object):
         return self._properties.get("etag")
 
     @property
+    def friendly_name(self):
+        """Union[str, None]: Title of the model (defaults to :data:`None`).
+
+        Raises:
+            ValueError: For invalid value types.
+        """
+        return self._properties.get("friendlyName")
+
+    @friendly_name.setter
+    def friendly_name(self, value):
+        if not isinstance(value, six.string_types) and value is not None:
+            raise ValueError("Pass a string, or None")
+        self._properties["friendlyName"] = value
+
+    @property
     def modified(self):
         """Union[datetime.datetime, None]: Datetime at which the model was last
         modified (:data:`None` until set from the server).
@@ -308,6 +480,28 @@ class Model(object):
         self._properties["description"] = value
 
     @property
+    def expires(self):
+        """Union[datetime.datetime, None]: Datetime at which the model will be
+        deleted.
+
+        Raises:
+            ValueError: For invalid value types.
+        """
+        expiration_time = self._properties.get("expirationTime")
+        if expiration_time is not None:
+            # expiration_time will be in milliseconds.
+            return google.cloud._helpers._datetime_from_microseconds(
+                1000.0 * float(expiration_time)
+            )
+
+    @expires.setter
+    def expires(self, value):
+        if not isinstance(value, datetime.datetime) and value is not None:
+            raise ValueError("Pass a datetime, or None")
+        value_ms = google.cloud._helpers._millis_from_datetime(value)
+        self._properties["expirationTime"] = _helpers._str_or_none(value_ms)
+
+    @property
     def feature_columns(self):
         """List[google.cloud.bigquery.model.StandardSqlField]: Input feature columns
            used to train the model.
@@ -333,6 +527,16 @@ class Model(object):
             #return _parse_sql_field_resources(prop)
 
     @property
+    def labels(self):
+        """Dict[str, str]: Labels for the model.
+
+        This method always returns a dict. To change a models's labels,
+        modify the dict, then call ``Client.update_model``. To delete a
+        label, set its value to :data:`None` before updating.
+        """
+        return self._properties.setdefault("labels", {})
+
+    @property
     def training_runs(self):
         """List[google.cloud.bigquery.model.TrainingRun]: Information for training run iterations
         ordered by ascending start times.
@@ -341,8 +545,12 @@ class Model(object):
         if not prop:
             return []
         else:
-            return []
-            #return _parse_training_runs(prop)
+            # hoist into a _parse_training_runs?
+            runs = []
+            for run in prop:
+                training_run = TrainingRun.from_api_repr(run)
+                runs.append(training_run)
+            return runs
 
     @property
     def model_type(self):
@@ -438,7 +646,7 @@ class Model(object):
         for filter_field in filter_fields:
             api_field = self._PROPERTY_TO_API_FIELD.get(filter_field)
             if api_field is None and filter_field not in self._properties:
-                raise ValueError("No model property %s" % filter_field)
+                raise ValueError("No Model property %s" % filter_field)
             elif api_field is not None:
                 partial[api_field] = self._properties.get(api_field)
             else:

@@ -371,12 +371,19 @@ class TestBigQuery(unittest.TestCase):
     def test_get_model(self):
         model_ref = DatasetReference("shollyman-demo-test","bqml_demo").model("ga_sessions_logistic")
         model = Config.CLIENT.get_model(model_ref)
+        self.assertEqual(model.model_type, 'LOGISTIC_REGRESSION')
+        self.assertEqual(len(model.training_runs), 1)
+        run = model.training_runs[0]
+        self.assertIsNotNone(run.started)
+        options = run.training_options
+        self.assertEqual(options.max_iterations, 999)
 
     def test_update_model(self):
         model_ref = DatasetReference("shollyman-demo-test","bqml_demo").model("ga_sessions_logistic")
         model = Config.CLIENT.get_model(model_ref)
-        model.description = "testing"
-        updated = Config.CLIENT.update_model(model, ["description",])
+        model.description = "test test"
+        model.friendly_name = "super friendly"
+        updated = Config.CLIENT.update_model(model, ['friendly_name'])
         self.assertEqual(updated.description, "testing")
 
     def test_delete_model(self):
@@ -385,12 +392,15 @@ class TestBigQuery(unittest.TestCase):
         Config.CLIENT.delete_model(model)
 
     def test_list_models(self):
-        dataset_id = _make_dataset_id("list_models")
-        dataset = self.temp_dataset(dataset_id)
-        iterator = Config.CLIENT.list_models(dataset)
+        iterator = Config.CLIENT.list_models(DatasetReference("shollyman-demo-test","bqml_demo"))    
         all_models = list(iterator)
         self.assertIsNone(iterator.next_page_token)
-        self.assertIn("linear_reg", all_models)
+        desired_models = ['linear_reg']
+        matched = []
+        for m in all_models:
+            if m.model_id in desired_models:
+                matched.append(m.model_id)
+        self.assertEqual(len(desired_models), len(matched))
 
 
     def test_list_partitions(self):

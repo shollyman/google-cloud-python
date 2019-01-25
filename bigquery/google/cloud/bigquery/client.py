@@ -738,7 +738,7 @@ class Client(ClientWithProject):
                 A reference to the model to delete. If a string is passed in,
                 this method attempts to create a model reference from a
                 string using
-                :func:`google.cloud.bigquery.table.TableReference.from_string`.
+                :func:`google.cloud.bigquery.model.ModelReference.from_string`.
             retry (:class:`google.api_core.retry.Retry`):
                 (Optional) How to retry the RPC.
         """
